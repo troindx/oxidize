@@ -17,19 +17,19 @@ use super::dto::User;
 
 pub struct UserService {
     mongo: Arc<MongoOracle>,
-    users: Collection<User>,
+    pub users: Collection<User>,
 }
 
 impl CRUD<User> for UserService{
 
-    async fn create<'a>(&self, user: &'a User) -> Result<Bson, Error>{
+    async fn create<'a>(&self, user: &'a User) -> Option<User>{
         let  new_user_result: Result<InsertOneResult, Error> = self
             .users
             .insert_one(user.to_owned(), None)
             .await;
         match new_user_result{
-            Ok(new_user) => Ok(new_user.inserted_id),
-            Err(e) => Err(e)
+            Ok(new_user) => Some(new_user.inserted_id),
+            Err(e) => None
         }
     }
 
@@ -40,7 +40,7 @@ impl CRUD<User> for UserService{
             .find_one(filter, None)
             .await;
         match user_result {
-            Ok(user) => user,
+            Ok(user) => Some(user),
             Err(_) =>  None
         }
     }
@@ -52,7 +52,7 @@ impl CRUD<User> for UserService{
             .find_one(filter, None)
             .await;
         match user {
-            Ok(user) => user,
+            Ok(user) => Some(user),
             Err(_) =>  None
         }
     }
@@ -64,16 +64,15 @@ impl CRUD<User> for UserService{
             .delete(filter, None)
             .await;
         match user {
-            Ok(user) => user,
+            Ok(user) => Some(user),
             Err(_) =>  None
         }
     }
 }
 
 impl UserService {
-    pub async fn new(mongo : Arc<MongoOracle>) -> Self {
-        dotenv::dotenv().expect("Failed to read .env file");
-        let users: Collection<Dispenser> = db.collection("users");
-        Self {mongo }
+    pub fn new(mongo : Arc<MongoOracle>) -> Self {
+        let users: Collection<User> = db.collection("users");
+        Self {mongo, users }
     }
 }
