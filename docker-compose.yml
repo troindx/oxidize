@@ -1,0 +1,30 @@
+version: "3.8"
+networks:
+  app-tier:
+    driver: bridge
+services:
+    db:
+        image: 'mongo'
+        restart: always
+        ports:
+            - "27017-27019:27017-27019"
+        expose:
+            - 27017-27019
+        environment:
+            - MONGO_INITDB_DATABASE=${MONGODB_DATABASE_NAME}
+            - MONGO_INITDB_ROOT_USERNAME=${MONGODB_ROOT_USERNAME}
+            - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_ROOT_PWD}
+            - MONGO_TEST_USER=${MONGO_TEST_USER}
+            - MONGO_TEST_PASSWORD=${MONGO_TEST_PASSWORD}
+        networks:
+            - app-tier 
+        volumes:
+            - ./mongo-volume:/data/db
+            - ./ops/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+    #node:
+    #    build:
+    #    context: .
+    #    dockerfile: Dockerfile
+    #    env_file:
+    #    - .env
+

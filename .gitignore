@@ -1,0 +1,8 @@
+target
+.env
+.DS_Store
+mongo-volume
+storage
+.vscode
+.terraform*
+terraform.tfstate*

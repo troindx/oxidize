@@ -1,0 +1,23 @@
+[package]
+name = "oxidize"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rocket = { version = "0.5", features = ["json"] }
+pear_codegen = "*"
+serde = { version = "*", features = ["derive"] }
+serde_json = "*"
+dotenv = "*"
+redis = "*"
+redis-derive = "*"
+tokio = { version = "*", features = ["full"] }
+chrono = "*"
+chrono-tz ="*"
+futures = "*"
+rand = "*"
+jsonwebtoken ="*"
+
+[dependencies.rocket_db_pools]
+version = "=0.1.0"
+features = ["mongodb"]
