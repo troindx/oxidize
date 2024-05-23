@@ -1,3 +1,5 @@
+use async_trait::async_trait;
+
 pub mod mongo;
 pub mod user;
 

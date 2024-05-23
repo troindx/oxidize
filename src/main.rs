@@ -1,10 +1,9 @@
 
 #[macro_use] 
 extern crate rocket;
-mod modules;
-use modules::mongo::service::MongoOracle;
-use modules::user::service::UserService;
 use env_logger;
+use oxidize::modules::mongo::service::MongoOracle;
+use oxidize::modules::user::service::UserService;
 use std::sync::Arc;
 
 #[launch]

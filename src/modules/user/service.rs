@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use async_trait::async_trait;
 use rocket_db_pools::mongodb::bson::doc;
 use rocket_db_pools::mongodb::results::InsertOneResult;
 use rocket_db_pools::mongodb::Collection;
