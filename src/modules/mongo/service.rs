@@ -1,11 +1,9 @@
-use dotenv::dotenv;
+use dotenv;
 use dotenv::var;
-use rocket::http::hyper::uri::Port;
-use rocket_db_pools::mongodb::error::Error;
-use rocket_db_pools::mongodb::{Collection, Client, Database};
+use log::info;
+use rocket_db_pools::mongodb::{ Client, Database};
 pub struct MongoOracle {
     pub client: Client,
-    uri : String,
     pub db_name : String,
     pub db: Database,
     pub host : String,
@@ -26,10 +24,15 @@ impl MongoOracle {
          + &host + &String::from(":")
          +&port+ &String::from("/")
          + &db_name;
-        let client = Client::with_uri_str(uri.to_owned()).await.unwrap();
+        let client_result = Client::with_uri_str(uri.to_owned()).await;
+        let client = match client_result {
+            Ok(cli) => {
+                info!("Connected successfully to MongoDB");
+                cli
+            }
+            Err(err) => panic!("Error when connecting to mongoDB: {}", err)
+        };
         let db = client.database(&db_name);
-        //let dispensers: Collection<Dispenser> = db.collection("dispensers");
-        //let tabs: Collection<Tab> = db.collection("tabs");
-        Self { client, uri, db_name, db, host, port }
+        Self { client, db_name, db, host, port }
     }
 }

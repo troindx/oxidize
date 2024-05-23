@@ -1,15 +1,11 @@
-
-
-use futures::Future;
-use rocket_db_pools::mongodb::{bson::Bson, error::Error};
-
 pub mod mongo;
 pub mod user;
 
 #[async_trait]
+#[allow(dead_code)]
 pub trait CRUD<T> {
-    async fn create(&self, new: T) ->  Result<Bson,Error>;
-    async fn read(&self, id: String) -> Result<T, Error>;
-    async fn update<'a>(&self, item: &'a T) -> Result<T, Error>;
-    async fn delete(&self, id: String) -> Result<T, Error>;
+    async fn create(&self, new: T) ->  Option<String>;
+    async fn read(&self, id: String) -> Option<T>;
+    async fn update(&self, item: T) -> Option<T>;
+    async fn delete(&self, id: String) ->u64;
 }

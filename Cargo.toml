@@ -17,6 +17,9 @@ chrono-tz ="*"
 futures = "*"
 rand = "*"
 jsonwebtoken ="*"
+async-trait="*"
+log = "*"
+env_logger = "*"
 
 [dependencies.rocket_db_pools]
 version = "=0.1.0"
