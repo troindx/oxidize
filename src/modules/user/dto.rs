@@ -1,17 +1,20 @@
 
 use rocket::form::FromForm;
 use rocket::serde::{Serialize, Deserialize};
+use rocket_db_pools::mongodb::bson::oid::ObjectId;
+use rocket_db_pools::mongodb::bson::Document;
 
-#[derive(Debug, Deserialize, Serialize,Clone, FromForm)]
+#[derive(Debug, Deserialize, Serialize,Clone)]
 pub struct User {
     pub email : String ,
     pub password : String,
     pub description : String,
     pub role : u8,
-    pub _id : String
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub _id : Option<ObjectId>
 }
 
-#[derive(Debug, FromForm, Deserialize, Serialize,Clone)]
+#[derive(Debug, Deserialize, Serialize,Clone)]
 pub struct UserDTO {
     pub user : User,
     pub jwt_secret : String,
