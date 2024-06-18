@@ -70,120 +70,118 @@ mod test {
     assert!(deleted_user.is_none());
 }
 
-#[tokio::test]
-async fn test_user_controller_crud_operations() {
-    let client = &TestingRuntime::get().await.client;
+    #[tokio::test]
+    async fn test_user_controller_crud_operations() {
+        let client = &TestingRuntime::get().await.client;
 
+        // Step 1: Create a new user
+        let user = User {
+            email: String::from("an_example_user@example.com"),
+            password: String::from("test_password2"),
+            description: String::from("Test Description 2"),
+            role: 2,
+            _id: None,
+        };
+        
+        let create_response: LocalResponse = client.post(uri!(oxidize::modules::user::controller::create_user))
+            .header(ContentType::JSON)
+            .body(json!(user).to_string())
+            .dispatch().await;
+        
+        assert_eq!(create_response.status(), Status::Created);
+        let created_user: Option<User> = create_response.into_json().await;
+        assert!(created_user.is_some());
+        let created_user = created_user.unwrap();
+        assert_eq!(created_user.email, user.email);
 
-    // Step 1: Create a new user
-    let user = User {
-        email: String::from("an_example_user@example.com"),
-        password: String::from("test_password2"),
-        description: String::from("Test Description 2"),
-        role: 2,
-        _id: None,
-    };
-    
-    let create_response: LocalResponse = client.post(uri!(oxidize::modules::user::controller::create_user))
-        .header(ContentType::JSON)
-        .body(json!(user).to_string())
-        .dispatch().await;
-    
-    assert_eq!(create_response.status(), Status::Created);
-    let created_user: Option<User> = create_response.into_json().await;
-    assert!(created_user.is_some());
-    let created_user = created_user.unwrap();
-    assert_eq!(created_user.email, user.email);
+        //Step 1b : Will not create a new user with an existing email, (will not create same user twice)
+        let existing_user_create_response: LocalResponse = client.post(uri!(oxidize::modules::user::controller::create_user))
+            .header(ContentType::JSON)
+            .body(json!(user).to_string())
+            .dispatch().await;
+        
+        assert_eq!(existing_user_create_response.status(), Status::Conflict);
+        let non_existing_user: Option<User> = existing_user_create_response.into_json().await;
+        assert!(non_existing_user.is_none());
 
-    //Step 1b : Will not create a new user with an existing email, (will not create same user twice)
-    let existing_user_create_response: LocalResponse = client.post(uri!(oxidize::modules::user::controller::create_user))
-        .header(ContentType::JSON)
-        .body(json!(user).to_string())
-        .dispatch().await;
-    
-    assert_eq!(existing_user_create_response.status(), Status::Conflict);
-    let non_existing_user: Option<User> = existing_user_create_response.into_json().await;
-    assert!(non_existing_user.is_none());
+        // Step 2: Read the user by ID
+        let user_id = created_user._id.clone().expect("User ID should be present");
+        let read_response: LocalResponse = client.get(uri!(oxidize::modules::user::controller::read_user(user_id.to_hex())))
+            .header(ContentType::JSON)
+            .dispatch().await;
 
-    // Step 2: Read the user by ID
-    let user_id = created_user._id.clone().expect("User ID should be present");
-    let read_response: LocalResponse = client.get(uri!(oxidize::modules::user::controller::read_user(user_id.to_hex())))
-        .header(ContentType::JSON)
-        .dispatch().await;
+        assert_eq!(read_response.status(), Status::Ok);
+        let read_user: Option<User> = read_response.into_json().await;
+        assert!(read_user.is_some());
+        assert_eq!(read_user.unwrap().email, user.email);
 
-    assert_eq!(read_response.status(), Status::Ok);
-    let read_user: Option<User> = read_response.into_json().await;
-    assert!(read_user.is_some());
-    assert_eq!(read_user.unwrap().email, user.email);
+        // Step 2b: Returns 400 bad request if id is not an objectId
+        let read_response: LocalResponse = client.get(uri!(oxidize::modules::user::controller::read_user(String::from("thisisnotanemail"))))
+            .header(ContentType::JSON)
+            .dispatch().await;
 
-    // Step 2b: Returns 400 bad request if id is not an objectId
-    let read_response: LocalResponse = client.get(uri!(oxidize::modules::user::controller::read_user(String::from("thisisnotanemail"))))
-        .header(ContentType::JSON)
-        .dispatch().await;
+        assert_eq!(read_response.status(), Status::BadRequest);
 
-    assert_eq!(read_response.status(), Status::BadRequest);
+        // Step 2c: Returns 404 if id is not found
+        let read_response: LocalResponse = client.get(uri!(oxidize::modules::user::controller::read_user(ObjectId::new().to_string())))
+            .header(ContentType::JSON)
+            .dispatch().await;
 
-    // Step 2c: Returns 404 if id is not found
-    let read_response: LocalResponse = client.get(uri!(oxidize::modules::user::controller::read_user(ObjectId::new().to_string())))
-        .header(ContentType::JSON)
-        .dispatch().await;
+        assert_eq!(read_response.status(), Status::NotFound);
 
-    assert_eq!(read_response.status(), Status::NotFound);
+        // Step 3: Find the user by email
+        let find_response: LocalResponse = client.get(uri!(oxidize::modules::user::controller::find_user_by_email(&user.email)))
+            .header(ContentType::JSON)
+            .dispatch().await;
 
-    // Step 3: Find the user by email
-    let find_response: LocalResponse = client.get(uri!(oxidize::modules::user::controller::find_user_by_email(&user.email)))
-        .header(ContentType::JSON)
-        .dispatch().await;
+        assert_eq!(find_response.status(), Status::Ok);
+        let found_user: Option<User> = find_response.into_json().await;
+        assert!(found_user.is_some());
+        assert_eq!(found_user.unwrap().email, user.email);
 
-    assert_eq!(find_response.status(), Status::Ok);
-    let found_user: Option<User> = find_response.into_json().await;
-    assert!(found_user.is_some());
-    assert_eq!(found_user.unwrap().email, user.email);
+        // Step 3C: Find the user by email returns 404 if 
+        let find_response: LocalResponse = client.get(uri!(oxidize::modules::user::controller::find_user_by_email(&user.email)))
+            .header(ContentType::JSON)
+            .dispatch().await;
 
-    // Step 3C: Find the user by email returns 404 if 
-    let find_response: LocalResponse = client.get(uri!(oxidize::modules::user::controller::find_user_by_email(&user.email)))
-        .header(ContentType::JSON)
-        .dispatch().await;
+        assert_eq!(find_response.status(), Status::Ok);
 
-    assert_eq!(find_response.status(), Status::Ok);
+        // Step 4: Update the user's information
+        let updated_user = User {
+            email: user.email.clone(),
+            password: String::from("updated_password"),
+            description: String::from("Updated Description"),
+            role: 1,
+            _id: Some(user_id.clone()),
+        };
 
-    // Step 4: Update the user's information
-    let updated_user = User {
-        email: user.email.clone(),
-        password: String::from("updated_password"),
-        description: String::from("Updated Description"),
-        role: 1,
-        _id: Some(user_id.clone()),
-    };
+        let update_response: LocalResponse = client.put(uri!(oxidize::modules::user::controller::update_user))
+            .header(ContentType::JSON)
+            .body(json!(updated_user).to_string())
+            .dispatch().await;
 
-    let update_response: LocalResponse = client.put(uri!(oxidize::modules::user::controller::update_user))
-        .header(ContentType::JSON)
-        .body(json!(updated_user).to_string())
-        .dispatch().await;
+        assert_eq!(update_response.status(), Status::Ok);
+        let updated_user_response: Option<User> = update_response.into_json().await;
+        assert!(updated_user_response.is_some());
+        let updated_user_response = updated_user_response.unwrap();
+        assert_eq!(updated_user_response.description, "Updated Description");
 
-    assert_eq!(update_response.status(), Status::Ok);
-    let updated_user_response: Option<User> = update_response.into_json().await;
-    assert!(updated_user_response.is_some());
-    let updated_user_response = updated_user_response.unwrap();
-    assert_eq!(updated_user_response.description, "Updated Description");
+        // Step 5: Delete the user
+        let delete_response: LocalResponse = client.delete(uri!(oxidize::modules::user::controller::delete_user(user_id.to_hex())))
+            .header(ContentType::JSON)
+            .dispatch().await;
 
-    // Step 5: Delete the user
-    let delete_response: LocalResponse = client.delete(uri!(oxidize::modules::user::controller::delete_user(user_id.to_hex())))
-        .header(ContentType::JSON)
-        .dispatch().await;
+        assert_eq!(delete_response.status(), Status::Ok);
+        let deleted_id: Option<ObjectId> = delete_response.into_json().await;
+        assert!(deleted_id.is_some());
+        assert_eq!(deleted_id.unwrap(), user_id);
 
-    assert_eq!(delete_response.status(), Status::Ok);
-    let deleted_id: Option<ObjectId> = delete_response.into_json().await;
-    assert!(deleted_id.is_some());
-    assert_eq!(deleted_id.unwrap(), user_id);
+        // Ensure the user is no longer available
+        let read_deleted_response: LocalResponse = client.get(uri!(oxidize::modules::user::controller::read_user(user_id.to_hex())))
+            .header(ContentType::JSON)
+            .dispatch().await;
 
-    // Ensure the user is no longer available
-    let read_deleted_response: LocalResponse = client.get(uri!(oxidize::modules::user::controller::read_user(user_id.to_hex())))
-        .header(ContentType::JSON)
-        .dispatch().await;
-
-    assert_eq!(read_deleted_response.status(), Status::NotFound);
-}
-
+        assert_eq!(read_deleted_response.status(), Status::NotFound);
+    }
 
 }
