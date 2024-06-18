@@ -1,12 +1,12 @@
-use std::str::FromStr;
 use std::sync::Arc;
 use async_trait::async_trait;
-use rocket_db_pools::mongodb::bson::{ self, bson, doc};
+use rocket_db_pools::mongodb::bson::{ self, doc};
 use rocket_db_pools::mongodb::bson::oid::ObjectId;
-use rocket_db_pools::mongodb::results::InsertOneResult;
-use rocket_db_pools::mongodb::Collection;
+use rocket_db_pools::mongodb::options::IndexOptions;
+use rocket_db_pools::mongodb::results::{DeleteResult, InsertOneResult, UpdateResult};
+use rocket_db_pools::mongodb::{Collection, IndexModel};
 use rocket_db_pools::mongodb::error::Error;
-use log::error;
+use log::{error, warn};
 use crate::modules::mongo::service::MongoOracle;
 use crate::modules::CRUDMongo;
 use super::dto::User;
@@ -19,17 +19,25 @@ pub struct UserService {
 #[async_trait]
 impl CRUDMongo<User> for UserService{
 
-    async fn create(&self, user: User) -> Option<ObjectId>{
-        let  new_user_result: Result<InsertOneResult, Error> = self
+    async fn create(&self, user: User) -> Option<InsertOneResult> {
+        // Check if a user with the given email already exists
+        let existing_user = self.find_by_email(&user.email).await;
+        if existing_user.is_some() {
+            warn!("User with email {} already exists", user.email);
+            return None;
+        }
+
+        let new_user_result: Result<InsertOneResult, Error> = self
             .users
             .insert_one(user.to_owned(), None)
             .await;
-        match new_user_result{
-            Ok(new_user) => new_user.inserted_id.as_object_id(),
-            Err(e) =>{
+        
+        match new_user_result {
+            Ok(resp) => Some(resp),
+            Err(e) => {
                 error!("Error creating user: {}", e);
                 None
-            } 
+            }
         }
     }
 
@@ -48,16 +56,27 @@ impl CRUDMongo<User> for UserService{
         }
     }
     
-    async fn update(&self, user: User) -> Option<User> {
+    async fn find_by_email(&self, email: &str) -> Option<User> {
+        let filter = doc! {"email": email};
+        match self.users.find_one(filter, None).await {
+            Ok(user) => user,
+            Err(e) => {
+                error!("Error finding user with email {}: {}", email, e);
+                None
+            }
+        }
+    }
+    
+    async fn update(&self, user: User) -> Option<UpdateResult> {
         let filter = doc! {"_id": &user._id};
         
         let update_doc = doc! {"$set": bson::to_document(&user).expect("Failed to convert User to Document")};
         let user_res = self
             .users
-            .find_one_and_update(filter, update_doc, None)
+            .update_one(filter, update_doc, None)
             .await;
         match user_res {
-            Ok(up_user) => up_user,
+            Ok(up_user) => Some(up_user),
             Err(e) =>{
                 error!("Error updating user with id {}: {}", user._id?, e);
                 None
@@ -65,19 +84,29 @@ impl CRUDMongo<User> for UserService{
         }
     }
 
-    async fn delete(&self, id: ObjectId) -> u64 {
+    async fn delete(&self, id: ObjectId) -> Option<DeleteResult> {
         let filter = doc! {"_id": &id};
         let user = self
             .users
             .delete_one(filter, None)
             .await;
         match user {
-            Ok(user) => user.deleted_count,
+            Ok(res) => Some(res),
             Err(e) => {
                 error!("Error deleting user with id {}: {}", id, e);
-                0
+                None
             }
         }
+    }
+
+    async fn initialize_db(&self) -> Result<(), Error> {
+        // Create unique index on email field
+        let index = IndexModel::builder().keys(doc! { "email": 1 }).
+            options(IndexOptions::builder().unique(true).build()).build();
+
+        self.users.create_index(index,None)
+            .await.expect("Error creating index for email in users.");
+        Ok(())
     }
 }
 

@@ -1,8 +1,5 @@
-
-use rocket::form::FromForm;
 use rocket::serde::{Serialize, Deserialize};
 use rocket_db_pools::mongodb::bson::oid::ObjectId;
-use rocket_db_pools::mongodb::bson::Document;
 
 #[derive(Debug, Deserialize, Serialize,Clone)]
 pub struct User {

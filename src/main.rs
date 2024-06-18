@@ -1,18 +1,12 @@
-
 #[macro_use] 
 extern crate rocket;
-use env_logger;
-use oxidize::modules::mongo::service::MongoOracle;
-use oxidize::modules::user::service::UserService;
-use std::sync::Arc;
+use libs::app::create_rocket_instance;
+pub mod modules;
+pub mod libs;
 
 #[launch]
 async fn rocket() -> _ {
-    env_logger::init();
-    let mongo = MongoOracle::new().await;
-    let arc_mongo = Arc::new(mongo);
-    let user = UserService::new(arc_mongo);
-    rocket::build()
-                //.mount("/", routes![dispenser, tab, spending])
-                .manage(user)
+    create_rocket_instance(false).await
 }
+
+

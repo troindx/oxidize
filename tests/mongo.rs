@@ -1,7 +1,6 @@
 use oxidize::modules::mongo::service::MongoOracle;
-
 #[tokio::test]
-async fn test_connection() {
+async fn test_new_connection() {
     let mongo_oracle = MongoOracle::new().await;
     assert!(mongo_oracle.client.is_some());
     assert!(mongo_oracle.db.is_some());

@@ -20,6 +20,7 @@ jsonwebtoken ="*"
 async-trait="*"
 log = "*"
 env_logger = "*"
+async-once-cell = "*"
 
 [dependencies.rocket_db_pools]
 version = "=0.1.0"

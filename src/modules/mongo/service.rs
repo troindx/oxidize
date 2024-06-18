@@ -1,7 +1,7 @@
 use dotenv;
 use dotenv::var;
 use log::info;
-use rocket_db_pools::mongodb::{Client, Database};
+use rocket_db_pools::mongodb::{ bson, error::Error, Client, Database};
 
 pub struct MongoOracle {
     pub client: Option<Client>,
@@ -12,6 +12,17 @@ pub struct MongoOracle {
 }
 
 impl MongoOracle {
+
+    pub async fn drop_database(&self) -> Result<(), Error> {
+        if let Some(db) = &self.db {
+            let collections = db.list_collection_names(None).await?;
+            for collection_name in collections {
+                db.collection::<bson::Document>(&collection_name).drop(None).await?;
+            }
+        }
+        Ok(())
+    }
+
     pub async fn new() -> Self {
         dotenv::dotenv().expect("Failed to read .env file");
         let username = var("MONGO_TEST_USER").expect("No MongoDB User has been set in ENV FILE");
