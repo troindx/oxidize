@@ -1,9 +1,11 @@
 mod test {
-    use oxidize::libs::testing::TestingRuntime;
+    use oxidize::framework::auth::{generate_jwt_token, generate_rsa_key_pair_pem};
+    use oxidize::framework:: testing::TestingRuntime;
     use oxidize::modules::mongo::service::MongoOracle;
     use oxidize::modules::user::service::UserService;
     use oxidize::modules::CRUDMongo;
     use oxidize::modules::user::dto::User;
+    use rocket::http::Header;
     use rocket_db_pools::mongodb::bson::oid::ObjectId;
     use std::sync::Arc;
     use tokio;
@@ -20,7 +22,8 @@ mod test {
             email: String::from("Atest_user2@example.com"),
             password: String::from("atest_password2"),
             description: String::from("Test Description"),
-            role: 2,
+            public_key: String::from("somepublickey"),
+            role: 1,
             _id: None,
         };
 
@@ -73,6 +76,8 @@ mod test {
     #[tokio::test]
     async fn test_user_controller_crud_operations() {
         let client = &TestingRuntime::get().await.client;
+        let (public, private) = generate_rsa_key_pair_pem();
+        let (_, malicious_private) = generate_rsa_key_pair_pem();
 
         // Step 1: Create a new user
         let user = User {
@@ -80,6 +85,7 @@ mod test {
             password: String::from("test_password2"),
             description: String::from("Test Description 2"),
             role: 2,
+            public_key: public.to_owned(),
             _id: None,
         };
         
@@ -146,17 +152,28 @@ mod test {
 
         assert_eq!(find_response.status(), Status::Ok);
 
-        // Step 4: Update the user's information
+        // Step 4: Update the user's information without token returns 401
         let updated_user = User {
             email: user.email.clone(),
             password: String::from("updated_password"),
             description: String::from("Updated Description"),
+            public_key: user.public_key.clone(),
             role: 1,
             _id: Some(user_id.clone()),
         };
 
-        let update_response: LocalResponse = client.put(uri!(oxidize::modules::user::controller::update_user))
+        let update_response: LocalResponse = client.put(uri!(oxidize::modules::user::controller::update_user(user_id.to_hex())))
             .header(ContentType::JSON)
+            .body(json!(updated_user.to_owned()).to_string())
+            .dispatch().await;
+        assert_eq!(update_response.status(), Status::Unauthorized);
+
+        // Step 4b: Update the user's information
+        let token = generate_jwt_token(&user_id.to_string(), &private, chrono::Duration::hours(1)).expect("Error generating token");
+        let auth_header = String::from("Bearer ") + token.as_str();
+        let update_response: LocalResponse = client.put(uri!(oxidize::modules::user::controller::update_user(user_id.to_hex())))
+            .header(ContentType::JSON)
+            .header(Header::new("Authorization", auth_header))
             .body(json!(updated_user).to_string())
             .dispatch().await;
 
@@ -165,6 +182,36 @@ mod test {
         assert!(updated_user_response.is_some());
         let updated_user_response = updated_user_response.unwrap();
         assert_eq!(updated_user_response.description, "Updated Description");
+
+        // Step 4c: updating fake user returns 404
+        let token = generate_jwt_token(&user_id.to_string(), &private, chrono::Duration::hours(1)).expect("Error generating token");
+        let auth_header = String::from("Bearer ") + token.as_str();
+        let update_response: LocalResponse = client.put(uri!(oxidize::modules::user::controller::update_user(ObjectId::new().to_hex())))
+            .header(ContentType::JSON)
+            .header(Header::new("Authorization", auth_header))
+            .body(json!(updated_user).to_string())
+            .dispatch().await;
+
+        assert_eq!(update_response.status(), Status::NotFound);
+
+        // Step 4d: update user with wrong token generates 401
+        let malicious_token = generate_jwt_token(&user_id.to_string(), &malicious_private, chrono::Duration::hours(1)).expect("Error generating token");
+        let malicious_auth_header = String::from("Bearer ") + malicious_token.as_str();
+        let updated_user = User {
+            email: user.email.clone(),
+            password: String::from("updated_password"),
+            description: String::from("Updated Description"),
+            public_key: user.public_key.clone(),
+            role: 1,
+            _id: Some(user_id.clone()),
+        };
+
+        let update_response: LocalResponse = client.put(uri!(oxidize::modules::user::controller::update_user(user_id.to_hex())))
+            .header(ContentType::JSON)
+            .header(Header::new("Authorization", malicious_auth_header))
+            .body(json!(updated_user.to_owned()).to_string())
+            .dispatch().await;
+        assert_eq!(update_response.status(), Status::Unauthorized);
 
         // Step 5: Delete the user
         let delete_response: LocalResponse = client.delete(uri!(oxidize::modules::user::controller::delete_user(user_id.to_hex())))

@@ -1,6 +1,7 @@
 #[macro_use] 
 extern crate rocket;
-use libs::app::create_rocket_instance;
+use framework::app::create_rocket_instance;
+use oxidize::framework;
 
 
 #[launch]

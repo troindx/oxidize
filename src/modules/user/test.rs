@@ -15,6 +15,7 @@ fn test_new_user() {
         email: email_slice.to_string(),
         password: password_slice.to_string(),
         description,
+        public_key: String::from("randompublickey"),
         role,
         _id: None,
     };
@@ -22,4 +23,5 @@ fn test_new_user() {
     assert!(user.email == email_slice);
     assert!(user.password == password_slice);
     assert!(user._id == None);
+    assert!(user.public_key == "randompublickey");
 }

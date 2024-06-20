@@ -11,7 +11,7 @@ pub struct App {
 /// # #[tokio::main]
 /// # async fn main() {
 ///     use rocket::local::asynchronous::Client;
-///     use oxidize::libs::app::create_rocket_instance;
+///     use oxidize::framework::app::create_rocket_instance;
 ///     let rocket = create_rocket_instance(false).await;
 ///     let client = Client::tracked(rocket).await.expect("valid rocket instance");
 /// # }

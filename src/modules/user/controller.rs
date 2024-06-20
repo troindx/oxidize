@@ -1,16 +1,18 @@
 use rocket::{delete, get, post, put};
 use rocket::{routes, State};
 use rocket_db_pools::mongodb::bson::oid::ObjectId;
-use super::dto::User;
+use super::dto::{User, UserRoles};
 use crate::modules::CRUDMongo;
-use crate::libs::app::App;
+use crate::framework::app::App;
+use crate::modules::user::guard::UpdateAuthGuard;
 use rocket::serde::json::Json;
 use rocket::response::status;
 use rocket::http::Status;
 use rocket::Route;
 
 #[post("/user", format = "application/json", data = "<user>")]
-pub async fn create_user(app: &State<App>, user: Json<User>) -> status::Custom<Json<Option<User>>> {
+pub async fn create_user(app: &State<App>, mut user: Json<User>) -> status::Custom<Json<Option<User>>> {
+    user.0.role = UserRoles::USER as u8;
     let new_id = app.users.create(user.0.to_owned()).await;
     match new_id {
         Some(id) => {
@@ -45,8 +47,8 @@ pub async fn find_user_by_email(app: &State<App>, email: String) -> status::Cust
     }
 }
 
-#[put("/user", format = "application/json", data = "<user>")]
-pub async fn update_user(app: &State<App>, user: Json<User>) -> status::Custom<Option<Json<User>>> {
+#[put("/user/<_id>", format = "application/json", data = "<user>")]
+pub async fn update_user(app: &State<App>, _id:String,  user: Json<User>, _session: UpdateAuthGuard) -> status::Custom<Option<Json<User>>> {
     let updated_user = app.users.update(user.0.to_owned()).await;
     match updated_user {
         Some(_) => status::Custom(Status::Ok, Some(user)),
@@ -55,7 +57,7 @@ pub async fn update_user(app: &State<App>, user: Json<User>) -> status::Custom<O
 }
 
 #[delete("/user/<id>", format = "application/json")]
-pub async fn delete_user(app: &State<App>, id: String) -> status::Custom<Option<Json<ObjectId>>> {
+pub async fn delete_user(app: &State<App>, id: String ,_session: UpdateAuthGuard) -> status::Custom<Option<Json<ObjectId>>> {
     match ObjectId::parse_str(&id) {
         Ok(object_id) => {
             let delete_result = app.users.delete(object_id).await;

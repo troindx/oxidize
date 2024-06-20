@@ -21,7 +21,11 @@ async-trait="*"
 log = "*"
 env_logger = "*"
 async-once-cell = "*"
+base64="*"
+pem="*"
+rsa = "*"
 
 [dependencies.rocket_db_pools]
-version = "=0.1.0"
+version = "*"
 features = ["mongodb"]
+

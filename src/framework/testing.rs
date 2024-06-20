@@ -3,7 +3,7 @@ use rocket::local::asynchronous::Client;
 
 use super::app::create_rocket_instance;
 pub struct TestingRuntime {
-    pub client: Client
+    pub client: Client,
 }
 
 impl TestingRuntime{
