@@ -24,6 +24,7 @@ async-once-cell = "*"
 base64="*"
 pem="*"
 rsa = "*"
+config ="*"
 
 [dependencies.rocket_db_pools]
 version = "*"

@@ -1,9 +1,12 @@
-use crate::modules::mongo::service::MongoOracle;
+use crate::{framework::config::OxidizeConfig, modules::mongo::service::MongoOracle};
 
 #[tokio::test]
 async fn test_new_mongo() {
-    let mongo = MongoOracle::new().await;
-    assert!(mongo.db_name.is_ascii());
-    assert!(mongo.port.is_ascii());
-    assert!(mongo.host.is_ascii());
+    let config = OxidizeConfig::new().expect("Error reading env variables");
+    let mongo = MongoOracle::new(config).await;
+    assert!(mongo.config.env.mongo_test_password.is_ascii());
+    assert!(mongo.config.env.mongo_test_user.is_ascii());
+    assert!(mongo.config.env.mongo_test_password.is_ascii());
+    assert!(mongo.config.env.mongodb_host.is_ascii());
+
 }

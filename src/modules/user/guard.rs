@@ -6,7 +6,7 @@ use crate::{framework::{app::App, auth::Claims}, modules::CRUDMongo};
 use super::dto::User;
 
 pub struct UpdateAuthGuard{
-    pub user : User,
+    pub user_before_update : User,
 }
 
 #[rocket::async_trait]
@@ -42,7 +42,7 @@ impl<'r> FromRequest<'r> for UpdateAuthGuard {
                         if user_id != token_data.claims.user_id {
                             return Outcome::Error((Status::BadRequest, ()));
                         }
-                        return Outcome::Success(UpdateAuthGuard {user:user.to_owned()});
+                        return Outcome::Success(UpdateAuthGuard {user_before_update:user.to_owned()});
                     }
                     Err(_) => {
                         return Outcome::Error((Status::Unauthorized, ()));

@@ -21,10 +21,4 @@ services:
         volumes:
             - ./mongo-volume:/data/db
             - ./ops/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
-    #node:
-    #    build:
-    #    context: .
-    #    dockerfile: Dockerfile
-    #    env_file:
-    #    - .env
 

@@ -5,18 +5,19 @@ use jsonwebtoken::{encode, EncodingKey, Header};
 use rsa::{pkcs8::LineEnding, pkcs8::der::zeroize::Zeroizing,pkcs8::EncodePrivateKey, pkcs8::EncodePublicKey, RsaPrivateKey, RsaPublicKey};
 use jsonwebtoken::Algorithm;
 
+/// Generates a pair of rsa keys in pem format, stringified and ready to use
+/// ```
+/// use oxidize::framework::auth
+/// let (pub_key, priv_key) = generate_rsa_key_pair_pem();
+/// ```
 pub fn generate_rsa_key_pair_pem() -> (String, Zeroizing<String>) {
     let mut rng = OsRng;
     let bits = 2048;
     let priv_key = RsaPrivateKey::new(&mut rng, bits).expect("failed to generate a key");
     let pub_key = RsaPublicKey::from(&priv_key);
 
-    // Convert the private key to PEM format using PKCS#8
     let private_key_pem = priv_key.to_pkcs8_pem(LineEnding::CRLF).expect("failed to convert private key to PEM");
-
-    // Convert the public key to PEM format
     let public_key_pem = pub_key.to_public_key_pem(LineEnding::CRLF).expect("failed to convert public key to PEM");
-
     (public_key_pem, private_key_pem)
 }
 

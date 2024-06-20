@@ -48,7 +48,7 @@ pub async fn find_user_by_email(app: &State<App>, email: String) -> status::Cust
 }
 
 #[put("/user/<_id>", format = "application/json", data = "<user>")]
-pub async fn update_user(app: &State<App>, _id:String,  user: Json<User>, _session: UpdateAuthGuard) -> status::Custom<Option<Json<User>>> {
+pub async fn update_user(app: &State<App>, _id:String,  user: Json<User>, _target: UpdateAuthGuard) -> status::Custom<Option<Json<User>>> {
     let updated_user = app.users.update(user.0.to_owned()).await;
     match updated_user {
         Some(_) => status::Custom(Status::Ok, Some(user)),
@@ -57,7 +57,7 @@ pub async fn update_user(app: &State<App>, _id:String,  user: Json<User>, _sessi
 }
 
 #[delete("/user/<id>", format = "application/json")]
-pub async fn delete_user(app: &State<App>, id: String ,_session: UpdateAuthGuard) -> status::Custom<Option<Json<ObjectId>>> {
+pub async fn delete_user(app: &State<App>, id: String ,_target: UpdateAuthGuard) -> status::Custom<Option<Json<ObjectId>>> {
     match ObjectId::parse_str(&id) {
         Ok(object_id) => {
             let delete_result = app.users.delete(object_id).await;

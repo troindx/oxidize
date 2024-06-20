@@ -2,8 +2,11 @@ use std::sync::Arc;
 use crate::modules;
 use modules::{mongo::service::MongoOracle, user::service::UserService, CRUDMongo};
 
+use super::config::OxidizeConfig;
+
 pub struct App {
     pub users:UserService,
+    pub config: OxidizeConfig,
 }
 
 /// Creates a valid rocket instance. Input true or false for development mode (testing)
@@ -19,7 +22,8 @@ pub struct App {
 
 pub async fn create_rocket_instance(dev_mode: bool) -> rocket::Rocket<rocket::Build> {
     env_logger::init();
-    let mongo = MongoOracle::new().await;
+    let config = OxidizeConfig::new().expect("Failed to load ENV VARIABLES");
+    let mongo = MongoOracle::new(config.clone()).await;
     let arc_mongo = Arc::new(mongo);
     if dev_mode {
         arc_mongo.drop_database().await.expect("Error dropping database");
@@ -28,8 +32,11 @@ pub async fn create_rocket_instance(dev_mode: bool) -> rocket::Rocket<rocket::Bu
     if dev_mode {
         user_service.initialize_db().await.expect("Error initializing database");
     }
-    let app : App = App { users: user_service};
+
+    
+    let app : App = App { users: user_service, config };
     rocket::build()
         .mount("/", crate::modules::user::controller::get_routes())
         .manage(app)
 }
+

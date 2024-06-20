@@ -1,5 +1,6 @@
 mod test {
     use oxidize::framework::auth::{generate_jwt_token, generate_rsa_key_pair_pem};
+    use oxidize::framework::config::OxidizeConfig;
     use oxidize::framework:: testing::TestingRuntime;
     use oxidize::modules::mongo::service::MongoOracle;
     use oxidize::modules::user::service::UserService;
@@ -14,7 +15,8 @@ mod test {
 
     #[tokio::test]
     async fn test_user_service_crud_operations() {
-        let mongo_oracle = Arc::new(MongoOracle::new().await);
+        let config = OxidizeConfig::new().expect("Could not load oxidize config");
+        let mongo_oracle = Arc::new(MongoOracle::new(config).await);
         mongo_oracle.drop_database().await.expect("Error dropping database");
         let user_service = UserService::new(mongo_oracle);
 
@@ -188,7 +190,7 @@ mod test {
         let auth_header = String::from("Bearer ") + token.as_str();
         let update_response: LocalResponse = client.put(uri!(oxidize::modules::user::controller::update_user(ObjectId::new().to_hex())))
             .header(ContentType::JSON)
-            .header(Header::new("Authorization", auth_header))
+            .header(Header::new("Authorization", auth_header.to_owned()))
             .body(json!(updated_user).to_string())
             .dispatch().await;
 
@@ -208,14 +210,28 @@ mod test {
 
         let update_response: LocalResponse = client.put(uri!(oxidize::modules::user::controller::update_user(user_id.to_hex())))
             .header(ContentType::JSON)
-            .header(Header::new("Authorization", malicious_auth_header))
+            .header(Header::new("Authorization", malicious_auth_header.to_owned()))
             .body(json!(updated_user.to_owned()).to_string())
             .dispatch().await;
         assert_eq!(update_response.status(), Status::Unauthorized);
 
-        // Step 5: Delete the user
+        // Step 5a: Delete the user returns 401 if unauthenticated
         let delete_response: LocalResponse = client.delete(uri!(oxidize::modules::user::controller::delete_user(user_id.to_hex())))
             .header(ContentType::JSON)
+            .dispatch().await;
+
+        assert_eq!(delete_response.status(), Status::Unauthorized);
+        // Step 5b: Delete the user with wrong key is also rejected
+        let delete_response: LocalResponse = client.delete(uri!(oxidize::modules::user::controller::delete_user(user_id.to_hex())))
+            .header(ContentType::JSON)
+            .header(Header::new("Authorization", malicious_auth_header))
+            .dispatch().await;
+
+        assert_eq!(delete_response.status(), Status::Unauthorized);
+        // Step 5b: Delete the user with wrong key is also rejected
+        let delete_response: LocalResponse = client.delete(uri!(oxidize::modules::user::controller::delete_user(user_id.to_hex())))
+            .header(ContentType::JSON)
+            .header(Header::new("Authorization", auth_header))
             .dispatch().await;
 
         assert_eq!(delete_response.status(), Status::Ok);
