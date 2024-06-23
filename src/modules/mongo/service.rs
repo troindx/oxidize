@@ -1,27 +1,43 @@
+use std::sync::Arc;
+
 use log::info;
-use rocket_db_pools::mongodb::{ bson, error::Error, Client, Database};
+use rocket_db_pools::mongodb::{ bson::Document, error::Error, Client, Database};
+use std::sync::Mutex;
 
 use crate::framework::config::OxidizeConfig;
 
 pub struct MongoOracle {
     pub client: Option<Client>,
     pub db: Option<Database>,
-    pub config: OxidizeConfig,
+    pub config: Arc<OxidizeConfig>,
+    pub collections: Mutex<Vec<String>>,
 }
 
 impl MongoOracle {
 
     pub async fn drop_database(&self) -> Result<(), Error> {
         if let Some(db) = &self.db {
-            let collections = db.list_collection_names(None).await?;
+            let collections = self.collections.lock().unwrap().clone();
             for collection_name in collections {
-                db.collection::<bson::Document>(&collection_name).drop(None).await?;
+                db.collection::<Document>(&collection_name).drop(None).await?;
             }
         }
         Ok(())
     }
 
-    pub async fn new( config : OxidizeConfig) -> Self {
+    pub fn add_collection(&self, collection_name: &str) {
+        let mut collections = self.collections.lock().unwrap();
+        collections.push(collection_name.to_string());
+    }
+
+    pub fn remove_collection(&self, collection_name: &str) {
+        let mut collections = self.collections.lock().unwrap();
+        if let Some(index) = collections.iter().position(|c| c == collection_name) {
+            collections.remove(index);
+        }
+    }
+
+    pub async fn new( config : Arc<OxidizeConfig>) -> Self {
         let uri = format!("mongodb://{}:{}@{}:{}/{}", 
             config.env.mongo_test_user, 
             config.env.mongo_test_password, 
@@ -37,7 +53,7 @@ impl MongoOracle {
             Err(err) => panic!("Error when connecting to MongoDB: {}", err)
         };
         let db = client.database(&config.env.mongodb_database_name);
-        Self { client: Some(client), db: Some(db), config }
+        Self { client: Some(client), db: Some(db), config,  collections: Mutex::new(vec![]), }
     }
 
     pub fn close(&mut self) {

@@ -7,7 +7,7 @@ use jsonwebtoken::Algorithm;
 
 /// Generates a pair of rsa keys in pem format, stringified and ready to use
 /// ```
-/// use oxidize::framework::auth
+/// use oxidize::framework::auth::generate_rsa_key_pair_pem;
 /// let (pub_key, priv_key) = generate_rsa_key_pair_pem();
 /// ```
 pub fn generate_rsa_key_pair_pem() -> (String, Zeroizing<String>) {
@@ -94,6 +94,7 @@ mod tests {
             public_key: pub_key.to_owned(),
             role: 1,
             _id: None,
+            email_verified: false
         };
         let registered_user_id = app.users.create(user.to_owned())
             .await

@@ -3,6 +3,7 @@ use rocket_db_pools::mongodb::{bson::oid::ObjectId, error::Error, results::{Dele
 
 pub mod mongo;
 pub mod user;
+pub mod mail;
 
 #[async_trait]
 #[allow(dead_code)]

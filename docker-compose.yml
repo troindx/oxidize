@@ -19,6 +19,5 @@ services:
         networks:
             - app-tier 
         volumes:
-            - ./mongo-volume:/data/db
+            # - ./mongo-volume:/data/db
             - ./ops/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
-

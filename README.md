@@ -10,7 +10,7 @@ The endpoint runs db queries against a mongodb server. The instance can be ran f
 Clone this repo. For the time being, the code uses a nosql mongoDB database to work with users, so before development or testing you must know that the endpoint requires an active mongoDB connection. Run it from the docker compose. Then, run 'cargo build' to build the executable, and 'cargo run' to deploy the endpoint in debug mode.
 
 ## Env File
-Before running, or testing, make sure you 'mv .env.dist .env'
+Before running, or testing, make sure you 'mv .env.dist .env' . Oxidize uses its own configuration handler that reads and parses the environment files and serves them to all modules across the application.
 
 ## Testing
 simply execute 'cargo test'. Make sure a mongo db database is running and config is correct.

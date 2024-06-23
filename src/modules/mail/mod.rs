@@ -1,5 +1,4 @@
-pub mod dto;
 pub mod service;
 pub mod controller;
-pub mod guard;
+pub mod dto;
 #[cfg(test)] mod test;

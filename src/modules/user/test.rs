@@ -18,10 +18,12 @@ fn test_new_user() {
         public_key: String::from("randompublickey"),
         role,
         _id: None,
+        email_verified: false,
     };
 
     assert!(user.email == email_slice);
     assert!(user.password == password_slice);
     assert!(user._id == None);
+    assert!(user.email_verified == false);
     assert!(user.public_key == "randompublickey");
 }

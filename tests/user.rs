@@ -15,25 +15,26 @@ mod test {
 
     #[tokio::test]
     async fn test_user_service_crud_operations() {
-        let config = OxidizeConfig::new().expect("Could not load oxidize config");
+        let config = Arc::new(OxidizeConfig::new().expect("Could not load oxidize config"));
         let mongo_oracle = Arc::new(MongoOracle::new(config).await);
         mongo_oracle.drop_database().await.expect("Error dropping database");
         let user_service = UserService::new(mongo_oracle);
 
         let user = User {
-            email: String::from("Atest_user2@example.com"),
+            email: String::from("fyfyAtest_user2@example.com"),
             password: String::from("atest_password2"),
             description: String::from("Test Description"),
             public_key: String::from("somepublickey"),
             role: 1,
             _id: None,
+            email_verified: false
         };
 
     // Test Create Operation
     let new_user_result = user_service.create(user.to_owned()).await.expect("Failed to create user");
     println!("Inserted ID: {:?}", new_user_result.inserted_id);
     let length = new_user_result.inserted_id.as_object_id().unwrap().to_hex().len();
-    assert!(length == 24, "ObjectId should be 24 characters long");
+    assert!(length == 24, "ObjectId should be 24 charaPcters long");
     let user_id = new_user_result.inserted_id.as_object_id().expect("could not convert objectID");
 
     // Test Read Operation
@@ -89,6 +90,7 @@ mod test {
             role: 2,
             public_key: public.to_owned(),
             _id: None,
+            email_verified: false
         };
         
         let create_response: LocalResponse = client.post(uri!(oxidize::modules::user::controller::create_user))
@@ -162,6 +164,7 @@ mod test {
             public_key: user.public_key.clone(),
             role: 1,
             _id: Some(user_id.clone()),
+            email_verified: false
         };
 
         let update_response: LocalResponse = client.put(uri!(oxidize::modules::user::controller::update_user(user_id.to_hex())))
@@ -206,6 +209,7 @@ mod test {
             public_key: user.public_key.clone(),
             role: 1,
             _id: Some(user_id.clone()),
+            email_verified: false
         };
 
         let update_response: LocalResponse = client.put(uri!(oxidize::modules::user::controller::update_user(user_id.to_hex())))
@@ -213,6 +217,17 @@ mod test {
             .header(Header::new("Authorization", malicious_auth_header.to_owned()))
             .body(json!(updated_user.to_owned()).to_string())
             .dispatch().await;
+        assert_eq!(update_response.status(), Status::Unauthorized);
+
+        // Step 4e: Update the user with expired token returns 401
+        let expired_token = generate_jwt_token(&user_id.to_string(), &private, chrono::Duration::hours(-1)).expect("Error generating token");
+        let expired_auth_header = String::from("Bearer ") + expired_token.as_str();
+        let update_response: LocalResponse = client.put(uri!(oxidize::modules::user::controller::update_user(user_id.to_hex())))
+            .header(ContentType::JSON)
+            .header(Header::new("Authorization", expired_auth_header))
+            .body(json!(updated_user).to_string())
+            .dispatch().await;
+
         assert_eq!(update_response.status(), Status::Unauthorized);
 
         // Step 5a: Delete the user returns 401 if unauthenticated

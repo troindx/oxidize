@@ -19,6 +19,8 @@ pub struct UserService {
 #[async_trait]
 impl CRUDMongo<User> for UserService{
 
+    /// Creates a user and returns Some(InsertOneResult) or none if the user already exists in the system with that email
+    /// 
     async fn create(&self, user: User) -> Option<InsertOneResult> {
         // Check if a user with the given email already exists
         let existing_user = self.find_by_email(&user.email).await;
@@ -114,6 +116,7 @@ impl UserService {
     pub fn new(mongo: Arc<MongoOracle>) -> Self {
         let db = mongo.db.as_ref().expect("Database not initialized");
         let users: Collection<User> = db.collection("users");
+        mongo.add_collection("users");
         Self { mongo, users }
     }
 }
