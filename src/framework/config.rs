@@ -1,6 +1,38 @@
+use std::str::FromStr;
+
 use config::{Config, Environment};
-use serde::Deserialize;
+use rsa::pkcs8::der::zeroize::Zeroizing;
+use serde::{Deserialize, Deserializer};
 use dotenv::dotenv;
+
+#[derive(Debug, Clone)]
+pub struct ZeroizedString(Zeroizing<String>);
+
+impl<'de> Deserialize<'de> for ZeroizedString {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Ok(ZeroizedString(Zeroizing::new(s)))
+    }
+}
+
+impl FromStr for ZeroizedString {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(ZeroizedString(Zeroizing::new(s.to_string())))
+    }
+}
+
+impl std::ops::Deref for ZeroizedString {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct OxidizeConfigEnvironment {
@@ -13,6 +45,11 @@ pub struct OxidizeConfigEnvironment {
     pub mongo_test_user: String,
     pub mongo_test_password:String,
     pub default_email_verification_key_length:usize,
+    pub email_sender_from:String,
+    pub email_reply_to:String,
+    pub smtp_user:String,
+    pub smtp_password:ZeroizedString,
+    pub smtp_host:String,
 }
 
 /// Creates a valid oxidizeConfig 
@@ -63,6 +100,8 @@ mod tests{
         assert_eq!(config.env.default_email_verification_key_length, var("default_email_verification_key_length")
             .expect("No default email verification key length set in ENV file").parse::<usize>()
             .expect("Email verification key length is not a number"));
+        assert_eq!(config.env.smtp_password.to_string(), var("smtp_password").expect("No smtp password found in ENV FILE"));
+
 
     }
 }

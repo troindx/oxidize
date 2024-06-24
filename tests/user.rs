@@ -27,7 +27,6 @@ mod test {
             public_key: String::from("somepublickey"),
             role: 1,
             _id: None,
-            email_verified: false
         };
 
     // Test Create Operation
@@ -90,7 +89,6 @@ mod test {
             role: 2,
             public_key: public.to_owned(),
             _id: None,
-            email_verified: false
         };
         
         let create_response: LocalResponse = client.post(uri!(oxidize::modules::user::controller::create_user))
@@ -164,7 +162,6 @@ mod test {
             public_key: user.public_key.clone(),
             role: 1,
             _id: Some(user_id.clone()),
-            email_verified: false
         };
 
         let update_response: LocalResponse = client.put(uri!(oxidize::modules::user::controller::update_user(user_id.to_hex())))
@@ -209,7 +206,6 @@ mod test {
             public_key: user.public_key.clone(),
             role: 1,
             _id: Some(user_id.clone()),
-            email_verified: false
         };
 
         let update_response: LocalResponse = client.put(uri!(oxidize::modules::user::controller::update_user(user_id.to_hex())))

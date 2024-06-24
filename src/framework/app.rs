@@ -2,7 +2,7 @@ use std::sync::Arc;
 use crate::modules::{self, mail::service::MailOracle};
 use modules::{mongo::service::MongoOracle, user::service::UserService, CRUDMongo};
 
-use super::config::OxidizeConfig;
+use super::{config::OxidizeConfig, translator::{self, OxidizeTranslator}};
 
 pub struct App {
     pub users:UserService,
@@ -30,8 +30,9 @@ pub async fn create_rocket_instance(dev_mode: bool) -> rocket::Rocket<rocket::Bu
         mongo.drop_database().await.expect("Error dropping database");
         users.initialize_db().await.expect("Error initializing database");
     }
+    let translator = Arc::new(OxidizeTranslator::new(config.clone()));
 
-    let mail = Arc::new(MailOracle::new(config.clone(),mongo.clone())); 
+    let mail = Arc::new(MailOracle::new(config.clone(),mongo.clone(), translator.clone())); 
 
     
     let app : App = App { users, config:config.clone(), mail };

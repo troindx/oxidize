@@ -94,7 +94,6 @@ mod tests {
             public_key: pub_key.to_owned(),
             role: 1,
             _id: None,
-            email_verified: false
         };
         let registered_user_id = app.users.create(user.to_owned())
             .await
