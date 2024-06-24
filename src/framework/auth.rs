@@ -54,6 +54,7 @@ mod tests {
     use rsa::pkcs8::DecodePublicKey;
     use crate::framework::app::create_rocket_instance;
     use crate::framework::app::App;
+    use crate::framework::testing::Mock;
     use crate::modules::user::dto::User;
     use crate::modules::CRUDMongo;
     use super::*;
@@ -87,14 +88,7 @@ mod tests {
         let (pub_key, priv_key) = generate_rsa_key_pair_pem();
         let (_, malicious_priv_key) = generate_rsa_key_pair_pem();
 
-        let mut user = User {
-            email: String::from("Atest_user2@example.com"),
-            password: String::from("atest_password2"),
-            description: String::from("Test Description"),
-            public_key: pub_key.to_owned(),
-            role: 1,
-            _id: None,
-        };
+        let mut user = User::mock();
         let registered_user_id = app.users.create(user.to_owned())
             .await
             .expect("Error while inserting user").inserted_id.as_object_id();

@@ -2,7 +2,7 @@ use std::sync::Arc;
 use crate::modules::{self, mail::service::MailOracle};
 use modules::{mongo::service::MongoOracle, user::service::UserService, CRUDMongo};
 
-use super::{config::OxidizeConfig, translator::{self, OxidizeTranslator}};
+use super::{config::OxidizeConfig, translator::OxidizeTranslator};
 
 pub struct App {
     pub users:UserService,
@@ -38,6 +38,7 @@ pub async fn create_rocket_instance(dev_mode: bool) -> rocket::Rocket<rocket::Bu
     let app : App = App { users, config:config.clone(), mail };
     rocket::build()
         .mount("/", crate::modules::user::controller::get_routes())
+        .mount("/", crate::modules::mail::controller::get_routes())
         .manage(app)
 }
 

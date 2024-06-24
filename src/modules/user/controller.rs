@@ -11,14 +11,13 @@ use rocket::http::Status;
 use rocket::Route;
 
 #[post("/user", format = "application/json", data = "<user>")]
-pub async fn create_user(app: &State<App>, mut user: Json<User>) -> status::Custom<Json<Option<User>>> {
-    user.0.role = UserRoles::USER as u8;
+pub async fn create_user(app: &State<App>, user: Json<User>) -> status::Custom<Json<Option<User>>> {
     let new_id = app.users.create(user.0.to_owned()).await;
     match new_id {
         Some(id) => {
             let mut created_user = user.0.to_owned();
             created_user._id = id.inserted_id.as_object_id();
-            app.mail.start_verification(&user).await.expect("Error starting email verification");
+            app.mail.start_verification(&created_user).await.expect("Error starting email verification");
             status::Custom(Status::Created, Json::from(Some(created_user)))
         }
         None => status::Custom(Status::Conflict, Json::from(None)) // Return 409 Conflict if the user already exists

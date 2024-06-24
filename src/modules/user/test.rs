@@ -1,3 +1,4 @@
+use crate::framework::testing::Mock;
 use super::dto::User;
 
 #[test]
@@ -5,7 +6,6 @@ fn test_new_user() {
     let email = String::from("troin@hotmail.com");
     let password = String::from("Thisisapassword");
     let description = String::from("description");
-    let role: u8 = 3;
 
     // Use string slices here
     let email_slice = email.as_str();
@@ -16,7 +16,6 @@ fn test_new_user() {
         password: password_slice.to_string(),
         description,
         public_key: String::from("randompublickey"),
-        role,
         _id: None,
     };
 
@@ -24,4 +23,15 @@ fn test_new_user() {
     assert!(user.password == password_slice);
     assert!(user._id == None);
     assert!(user.public_key == "randompublickey");
+}
+
+#[test]
+fn test_fake_user() {
+    let user = User::mock();
+    //Check that the user is valid
+    assert!(user.email.contains("@"));
+    assert!(user.password.len() >= 8);
+    assert!(user.description.len() >= 10);
+    assert!(user._id == None);
+    assert!(user.public_key.len() > 0);
 }

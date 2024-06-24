@@ -6,6 +6,10 @@ pub struct TestingRuntime {
     pub client: Client,
 }
 
+pub trait Mock {
+    fn mock() -> Self;
+}
+
 impl TestingRuntime{
     async fn new() -> Self {
         let rocket = create_rocket_instance(true).await;

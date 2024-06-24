@@ -55,19 +55,30 @@ impl MailOracle {
 
     pub async fn start_verification(&self , user: &User) -> Option<EmailVerification>{
         let secret = self.generate_random_url_safe_string(self.config.env.default_email_verification_key_length);
-        let mut verification = EmailVerification { 
-            email:user.email.clone(), 
-            secret , 
-            _id:None, 
-            created: Utc::now(),
-            verified: false
+
+        let previous_verification = self.find_verification_by_user_id(&user._id.clone().expect("User id not found")).await;
+        let mut verification = if previous_verification.is_some() {
+            let mut tmp = previous_verification.unwrap();
+            tmp.updated = Utc::now();
+            tmp.verified = false;
+            tmp.secret = secret;
+            self.update(&tmp).await.expect("Error updating verification on start step");
+            tmp
+        } else {
+            let mut tmp =EmailVerification { 
+                user_id: user._id.clone().expect("User id not found"),
+                email:user.email.clone(), 
+                secret , 
+                _id:None, 
+                created: Utc::now(),
+                updated: Utc::now(),
+                verified: false
+            };
+            let inserted_id = self.create(&tmp).await.expect("Error saving verification on start step");
+            tmp._id = Some(inserted_id);
+            tmp
         };
-        let result = self.save_verification_to_database(&verification).await;
-        if result.is_none() {
-            return None;
-        } 
-        let result = result.unwrap();
-        verification._id = Some(result);
+        verification._id = Some(verification._id.clone().expect("Verification id not found"));
         Some(verification)
     }
 
@@ -83,13 +94,34 @@ impl MailOracle {
         }
     }
 
-    async fn save_verification_to_database(&self, verification: &EmailVerification) -> Option<ObjectId> {
-        // Check if a verification with the given email already exists
-        let existing_verification = self.find_verification_by_email(&verification.email).await;
-        if existing_verification.is_some() {
-            return existing_verification.unwrap()._id;
+    pub async fn find_verification(&self, id: &ObjectId) -> Option<EmailVerification> {
+        let filter = doc! {"_id": &id};
+        let verification_result = self
+            .verifications
+            .find_one(filter, None)
+            .await;
+        match verification_result {
+            Ok(verification) => verification,
+            Err(e) => {
+                error!("Error reading user with id {}: {}", id, e);
+                None
+            } 
         }
+    }
 
+    pub async fn find_verification_by_user_id(&self, user_id: &ObjectId) -> Option<EmailVerification> {
+        let filter = doc! {"user_id": user_id};
+        match self.verifications.find_one(filter, None).await {
+            Ok(verification) => verification,
+            Err(e) => {
+                error!("Error finding user_id verification with {}: {}", user_id.to_string(), e);
+                None
+            }
+        }
+    }
+
+
+    async fn create(&self, verification: &EmailVerification) -> Option<ObjectId> {
         let new_verification_result: Result<InsertOneResult, Error> = self
             .verifications
             .insert_one(verification, None)
@@ -104,27 +136,31 @@ impl MailOracle {
         }
     }
 
-    pub async fn finish_verification(&self, email: &str, secret: &str ) -> Result<(), io::Error> {
-        let verification = self.find_verification_by_email(email).await;
+    pub async fn finish_verification(&self, user_id: &ObjectId, verification_id: &ObjectId, secret: &str ) -> Result<EmailVerification, io::Error> {
+        let verification = self.find_verification(verification_id).await;
         if verification.is_none() {
             return Err(io::Error::new(io::ErrorKind::NotFound, "Verification not found"));
         }
         let mut  verification = verification.unwrap();
+        if user_id != &verification.user_id {
+            return Err(io::Error::new(io::ErrorKind::PermissionDenied, "Wrong user id in verification"));
+        }
+
         if secret == verification.secret{
             verification.verified = true;
-            self.update(verification).await.expect("Error updating verification on finsih step");
-            Ok(())
+            self.update(&verification).await.expect("Error updating verification on finsih step");
+            Ok(verification)
         }
         else{
-            Err(io::Error::new(io::ErrorKind::NotFound, "Verification not found"))
+            Err(io::Error::new(io::ErrorKind::InvalidData, "Verification secret does not match"))
         }
 
     }
 
-    async fn update(&self, verification: EmailVerification) -> Option<UpdateResult> {
+    async fn update(&self, verification: &EmailVerification) -> Option<UpdateResult> {
         let filter = doc! {"_id": &{verification._id}};
         
-        let update_doc = doc! {"$set": bson::to_document(&verification).expect("Failed to convert User to Document")};
+        let update_doc = doc! {"$set": bson::to_document(&verification).expect("Failed to convert EmailVerification to Document")};
         let verify_res = self
             .verifications
             .update_one(filter, update_doc, None)
@@ -140,7 +176,7 @@ impl MailOracle {
 
     pub async fn initialize_db(&self) -> Result<(), Error> {
         // Create unique index on email field
-        let index = IndexModel::builder().keys(doc! { "email": 1 }).
+        let index = IndexModel::builder().keys(doc! { "user_id": 1 }).
             options(IndexOptions::builder().unique(true).build()).build();
 
         self.verifications.create_index(index,None)

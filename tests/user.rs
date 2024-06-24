@@ -1,7 +1,7 @@
 mod test {
     use oxidize::framework::auth::{generate_jwt_token, generate_rsa_key_pair_pem};
     use oxidize::framework::config::OxidizeConfig;
-    use oxidize::framework:: testing::TestingRuntime;
+    use oxidize::framework:: testing::{Mock, TestingRuntime};
     use oxidize::modules::mongo::service::MongoOracle;
     use oxidize::modules::user::service::UserService;
     use oxidize::modules::CRUDMongo;
@@ -20,14 +20,7 @@ mod test {
         mongo_oracle.drop_database().await.expect("Error dropping database");
         let user_service = UserService::new(mongo_oracle);
 
-        let user = User {
-            email: String::from("fyfyAtest_user2@example.com"),
-            password: String::from("atest_password2"),
-            description: String::from("Test Description"),
-            public_key: String::from("somepublickey"),
-            role: 1,
-            _id: None,
-        };
+        let user = User::mock();
 
     // Test Create Operation
     let new_user_result = user_service.create(user.to_owned()).await.expect("Failed to create user");
@@ -41,7 +34,6 @@ mod test {
     assert_eq!(retrieved_user.email, user.email);
     assert_eq!(retrieved_user.password, user.password);
     assert_eq!(retrieved_user.description, user.description);
-    assert_eq!(retrieved_user.role, user.role);
 
     // Test find By Email Operation
     let email_user = user_service.find_by_email(user.email.as_str()).await.expect("Failed to find user by email");
@@ -82,14 +74,8 @@ mod test {
         let (_, malicious_private) = generate_rsa_key_pair_pem();
 
         // Step 1: Create a new user
-        let user = User {
-            email: String::from("an_example_user@example.com"),
-            password: String::from("test_password2"),
-            description: String::from("Test Description 2"),
-            role: 2,
-            public_key: public.to_owned(),
-            _id: None,
-        };
+        let mut user = User::mock();
+        user.public_key = public;
         
         let create_response: LocalResponse = client.post(uri!(oxidize::modules::user::controller::create_user))
             .header(ContentType::JSON)
@@ -160,7 +146,6 @@ mod test {
             password: String::from("updated_password"),
             description: String::from("Updated Description"),
             public_key: user.public_key.clone(),
-            role: 1,
             _id: Some(user_id.clone()),
         };
 
@@ -204,7 +189,6 @@ mod test {
             password: String::from("updated_password"),
             description: String::from("Updated Description"),
             public_key: user.public_key.clone(),
-            role: 1,
             _id: Some(user_id.clone()),
         };
 

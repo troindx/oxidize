@@ -31,8 +31,10 @@ fluent-bundle = "*"
 fluent-langneg = "*"
 intl-memoizer = "*"
 unic-langid = "*"
+fake = "*"
 
 [dependencies.rocket_db_pools]
 version = "*"
 features = ["mongodb"]
+
 
