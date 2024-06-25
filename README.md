@@ -1,4 +1,4 @@
-![Oxidize logo](https://hamrodev.com/images/oxidize%20logo.png)
+![Oxidize logo](https://hamrodev.com/images/oxidizelogo.png)
 
 # Oxidize
 Oxidize is a lightweight framework designed to create reusable modules for API rest endpoint development using Rust and Rocket.
