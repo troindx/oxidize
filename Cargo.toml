@@ -1,6 +1,6 @@
 [package]
 name = "oxidize"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2021"
 
 [dependencies]
@@ -21,7 +21,7 @@ async-trait = "*"
 log = "*"
 env_logger = "*"
 async-once-cell = "*"
-base64 = "*"
+base64 = "0.22.0"
 pem="*"
 rsa = "*"
 config = "*"

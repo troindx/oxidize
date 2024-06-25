@@ -1711,11 +1711,11 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
 name = "oxidize"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "async-once-cell",
  "async-trait",
- "base64 0.13.1",
+ "base64 0.22.1",
  "chrono",
  "chrono-tz",
  "config",
