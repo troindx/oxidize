@@ -18,5 +18,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: Build
       run: cargo build --verbose
+    - name: Launch Docker Compose
+      run: docker compose up -d
     - name: Run tests
       run: cargo test --verbose
