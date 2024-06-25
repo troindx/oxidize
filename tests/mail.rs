@@ -1,15 +1,14 @@
 mod test { 
-    use oxidize::framework::app::{create_rocket_instance, App};
+    use oxidize::framework::app::App;
     use oxidize::framework::auth::{generate_jwt_token, generate_rsa_key_pair_pem};
     use oxidize::framework::config::OxidizeConfig;
     use oxidize::framework:: testing::{Mock, TestingRuntime};
     use oxidize::framework::translator::OxidizeTranslator;
     use oxidize::modules::mail::service::MailOracle;
     use oxidize::modules::mongo::service::MongoOracle;
-    use oxidize::modules::{user, CRUDMongo};
+    use oxidize::modules::CRUDMongo;
     use oxidize::modules::user::dto::User;
     use rocket::http::Header;
-    use rocket::local::asynchronous::Client;
     use rocket::uri;
     use rocket_db_pools::mongodb::bson::oid::ObjectId;
     use std::sync::Arc;

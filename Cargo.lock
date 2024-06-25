@@ -1711,11 +1711,11 @@ checksum = "b15813163c1d831bf4a13c3610c05c0d03b39feb07f7e09fa234dac9b15aaf39"
 
 [[package]]
 name = "oxidize"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "async-once-cell",
  "async-trait",
- "base64 0.22.1",
+ "base64 0.13.1",
  "chrono",
  "chrono-tz",
  "config",
@@ -1733,7 +1733,7 @@ dependencies = [
  "pear_codegen",
  "pem",
  "rand",
- "redis 0.25.3",
+ "redis",
  "redis-derive",
  "rocket",
  "rocket_db_pools",
@@ -2077,21 +2077,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "redis"
-version = "0.25.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6472825949c09872e8f2c50bde59fcefc17748b6be5c90fd67cd8b4daca73bfd"
-dependencies = [
- "combine",
- "itoa",
- "percent-encoding",
- "ryu",
- "sha1_smol",
- "socket2 0.5.7",
- "url",
-]
-
-[[package]]
 name = "redis-derive"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2099,7 +2084,7 @@ checksum = "dd54aa405add884ec36f7eb40d6d09d5be4ea6b69655492dd5764bc7d698ef12"
 dependencies = [
  "heck",
  "quote",
- "redis 0.21.7",
+ "redis",
  "syn 1.0.109",
 ]
 

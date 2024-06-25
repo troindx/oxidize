@@ -1,7 +1,7 @@
 use rocket::{delete, get, post, put};
 use rocket::{routes, State};
 use rocket_db_pools::mongodb::bson::oid::ObjectId;
-use super::dto::{User, UserRoles};
+use super::dto::User;
 use crate::modules::CRUDMongo;
 use crate::framework::app::App;
 use crate::modules::user::guard::UpdateAuthGuard;
@@ -57,7 +57,7 @@ pub async fn update_user(app: &State<App>, _id:String,  user: Json<User>, _targe
 }
 
 #[delete("/user/<id>", format = "application/json")]
-pub async fn delete_user(app: &State<App>, id: String ,_target: UpdateAuthGuard) -> status::Custom<Option<Json<ObjectId>>> {
+pub async fn delete_user(app: &State<App>, id: String , __target: UpdateAuthGuard) -> status::Custom<Option<Json<ObjectId>>> {
     match ObjectId::parse_str(&id) {
         Ok(object_id) => {
             let delete_result = app.users.delete(object_id).await;

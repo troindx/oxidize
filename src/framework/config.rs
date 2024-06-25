@@ -1,7 +1,5 @@
-use std::{num::ParseIntError, str::FromStr};
-
+use std::str::FromStr;
 use config::{Config, Environment};
-use rocket::figment::value;
 use rsa::pkcs8::der::zeroize::Zeroizing;
 use serde::{Deserialize, Deserializer};
 use dotenv::dotenv;
@@ -104,7 +102,6 @@ mod tests{
             .expect("No default email verification key length set in ENV file").parse::<usize>()
             .expect("Email verification key length is not a number"));
         assert_eq!(config.env.smtp_password.to_string(), var("smtp_password").expect("No smtp password found in ENV FILE"));
-
-
+        assert_eq!(config.env.run_mode.to_string(), var("run_mode").expect("No  run mode found in ENV FILE"));
     }
 }

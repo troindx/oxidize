@@ -16,3 +16,6 @@ Before running, or testing, make sure you 'mv .env.dist .env' . Oxidize uses its
 
 ## Testing
 simply execute 'cargo test'. Make sure a mongo db database is running and config is correct.
+
+### More info
+For more info, check the wiki of this project.
