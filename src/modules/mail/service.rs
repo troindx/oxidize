@@ -9,6 +9,7 @@ use rand::Rng;
 use rand::distributions::Alphanumeric;
 use base64::Engine;
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
+use rocket::uri;
 use rocket_db_pools::mongodb::bson::{self, doc};
 use rocket_db_pools::mongodb::bson::oid::ObjectId;
 use rocket_db_pools::mongodb::options::IndexOptions;
@@ -79,6 +80,7 @@ impl MailOracle {
             tmp
         };
         verification._id = Some(verification._id.clone().expect("Verification id not found"));
+        self.send_verification_mail(&verification.email, verification.clone()).await;
         Some(verification)
     }
 
@@ -184,14 +186,24 @@ impl MailOracle {
         Ok(())
     }
 
-    pub async fn send_mail(&self, mail_to: &str, _verification: EmailVerification)  {
+    pub async fn send_verification_mail(&self, mail_to: &str, verification: EmailVerification)  {
+        let link = uri!(crate::modules::mail::controller::finish_verification(
+            id=verification._id.unwrap().to_string(), 
+            secret=verification.secret.clone()));
+        if self.config.env.run_mode == "dev" {
+            println!("Email verification link: {}",link.to_string());
+            return;
+        }
+        
+        self.translator.get("verify_email_body", None);
+        let email_body = self.translator.get("verify_email_body", Some(vec![("link", link.to_string().into())]));
         // Define the email content and sender/recipient details
         let email = Message::builder()
         .from(self.config.env.email_sender_from.parse().unwrap())
         .reply_to(self.config.env.email_reply_to.parse().unwrap())
         .to(mail_to.parse().unwrap())
-        .subject(self.translator.get("verify_email_subject"))
-        .body(String::from("Hello, this is a test email sent using Rust!"))
+        .subject(self.translator.get("verify_email_subject", None))
+        .body(email_body)
         .unwrap();
 
         // Define SMTP server credentials

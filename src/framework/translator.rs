@@ -1,4 +1,4 @@
-use fluent::FluentResource;
+use fluent::{FluentArgs, FluentResource, FluentValue};
 use fluent_bundle::bundle::FluentBundle as FluentBundleConcurrent;
 use std::fs;
 use std::sync::Arc;
@@ -32,13 +32,22 @@ impl OxidizeTranslator {
         Self { config: config.clone(), bundle:Arc::new(bundle)}
     } 
 
-    pub fn get(&self, str: &str) -> String{
+    pub fn get(&self, str: &str, params: Option<Vec<(&str, FluentValue)>>) -> String {
         let msg = self.bundle.get_message(str)
             .expect("Message doesn't exist.");
         let mut errors = vec![];
         let pattern = msg.value()
             .expect("Message has no value.");
-        let value = self.bundle.format_pattern(&pattern, None, &mut errors);
+    
+        // Convert the vector of parameters into FluentArgs
+        let fluent_args = params.map(|params| {
+            params.into_iter().fold(FluentArgs::new(), |mut args, (key, value)| {
+                args.set(key, value);
+                args
+            })
+        });
+    
+        let value = self.bundle.format_pattern(&pattern, fluent_args.as_ref(), &mut errors);
         value.to_string()
     }
 }
@@ -55,8 +64,11 @@ mod tests {
     fn test_oxidize_translator() {
         let config = Arc::new(OxidizeConfig::new().expect("Error creating config"));
         let translator = OxidizeTranslator::new(config);
-        let value = translator.get("test");
+        let value = translator.get("test", None);
         assert_eq!(&value, "This is a test");
+
+        let value = translator.get("test_with_params", Some(vec![("param", "param".into())]));
+        assert_eq!(&value, "This is a \u{2068}param\u{2069}");
 
     }
 }

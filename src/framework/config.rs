@@ -1,6 +1,7 @@
-use std::str::FromStr;
+use std::{num::ParseIntError, str::FromStr};
 
 use config::{Config, Environment};
+use rocket::figment::value;
 use rsa::pkcs8::der::zeroize::Zeroizing;
 use serde::{Deserialize, Deserializer};
 use dotenv::dotenv;
@@ -34,6 +35,7 @@ impl std::ops::Deref for ZeroizedString {
     }
 }
 
+
 #[derive(Debug, Deserialize, Clone)]
 pub struct OxidizeConfigEnvironment {
     pub mongodb_host: String,
@@ -50,6 +52,7 @@ pub struct OxidizeConfigEnvironment {
     pub smtp_user:String,
     pub smtp_password:ZeroizedString,
     pub smtp_host:String,
+    pub run_mode:String
 }
 
 /// Creates a valid oxidizeConfig 
