@@ -16,11 +16,21 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+
+    # Step to create the .env file from secret
     - name: Create Env File
-      run: echo "${{ secrets.ENV }}" > .env
+      run: |
+        echo "${{ secrets.ENV }}" > .env
+
+    # Step to display the contents of the .env file for debugging (optional, but useful)
+    - name: Display .env file
+      run: cat .env
+
     - name: Build
       run: cargo build --verbose
+
     - name: Launch Docker Compose
       run: docker compose up -d
+
     - name: Run tests
       run: cargo test --verbose
