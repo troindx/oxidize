@@ -16,8 +16,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Create Env File
-      run: echo "${{ secrets.WEBSITE_ENV_FILE }}" > .env
     - name: Build
       run: cargo build --verbose
     - name: Launch Docker Compose
