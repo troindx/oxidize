@@ -11,11 +11,11 @@ services:
         expose:
             - 27017-27019
         environment:
-            - MONGO_INITDB_DATABASE=${MONGODB_DATABASE_NAME}
-            - MONGO_INITDB_ROOT_USERNAME=${MONGODB_ROOT_USERNAME}
-            - MONGO_INITDB_ROOT_PASSWORD=${MONGODB_ROOT_PWD}
-            - MONGO_TEST_USER=${MONGO_TEST_USER}
-            - MONGO_TEST_PASSWORD=${MONGO_TEST_PASSWORD}
+            - MONGO_INITDB_DATABASE=${mongodb_database_name}
+            - MONGO_INITDB_ROOT_USERNAME=${mongodb_root_username}
+            - MONGO_INITDB_ROOT_PASSWORD=${monghodb_root_pwd}
+            - MONGO_TEST_USER=${mongo_test_user}
+            - MONGO_TEST_PASSWORD=${mongo_test_password}
         networks:
             - app-tier 
         volumes:
