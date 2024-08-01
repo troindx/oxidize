@@ -2,6 +2,7 @@ version: "3.8"
 networks:
   app-tier:
     driver: bridge
+    
 services:
     oxidize:
         container_name: oxidize
@@ -13,10 +14,13 @@ services:
             - ${default_port}
         depends_on:
             - mongodb
+        networks:
+            - app-tier
 
     mongodb:
         image: 'mongo'
         restart: always
+        container_name: mongodb
         ports:
             - "27017-27019:27017-27019"
         expose:
