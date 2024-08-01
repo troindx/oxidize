@@ -3,7 +3,18 @@ networks:
   app-tier:
     driver: bridge
 services:
-    db:
+    oxidize:
+        container_name: oxidize
+        image: oxidize
+        build: .
+        ports:
+            - "${default_port}:${default_port}"
+        expose:
+            - ${default_port}
+        depends_on:
+            - mongodb
+
+    mongodb:
         image: 'mongo'
         restart: always
         ports:
@@ -13,11 +24,11 @@ services:
         environment:
             - MONGO_INITDB_DATABASE=${mongodb_database_name}
             - MONGO_INITDB_ROOT_USERNAME=${mongodb_root_username}
-            - MONGO_INITDB_ROOT_PASSWORD=${monghodb_root_pwd}
+            - MONGO_INITDB_ROOT_PASSWORD=${mongodb_root_pwd}
             - MONGO_TEST_USER=${mongo_test_user}
             - MONGO_TEST_PASSWORD=${mongo_test_password}
         networks:
             - app-tier 
         volumes:
             # - ./mongo-volume:/data/db
-            - ./ops/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro
+            - ./ops/mongo/init-mongo.js:/docker-entrypoint-initdb.d/init-mongo.js:ro

@@ -32,6 +32,7 @@ fluent-langneg = "*"
 intl-memoizer = "*"
 unic-langid = "*"
 fake = "*"
+scylla = "0.13.0"
 
 [dependencies.rocket_db_pools]
 version = "*"
